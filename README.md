@@ -1,0 +1,215 @@
+# pysand
+
+[![PyPI Version](https://img.shields.io/pypi/v/pysand.svg)](https://pypi.org/project/pysand) [![Python Versions](https://img.shields.io/pypi/pyversions/pysand.svg)](https://pypi.org/project/pysand) [![License](https://img.shields.io/pypi/l/pysand.svg)](LICENSE)
+
+**Quickly spin up disposable Python sandboxes (virtualenv or Docker), install dependencies, execute code or scripts, capture output, and tear down—all with one simple API or CLI.**
+
+---
+
+## Table of Contents
+
+1. [Why pysand?](#why-pysand)  
+2. [Features](#features)  
+3. [Installation](#installation)  
+4. [Quickstart](#quickstart)  
+   - [CLI Usage](#cli-usage)  
+   - [Programmatic Usage](#programmatic-usage)  
+5. [Backend Details](#backend-details)  
+   - [VirtualenvSandbox](#virtualenvsandbox)  
+   - [DockerSandbox](#dockersandbox)  
+6. [Advanced Examples](#advanced-examples)  
+7. [Testing](#testing)  
+8. [CI Integration](#ci-integration)  
+9. [Contributing](#contributing)  
+10. [License](#license)  
+
+---
+
+## Why pysand?
+
+When you need to:
+
+- Test code snippets against different dependency versions  
+- Run untrusted or experimental code in isolation  
+- Provide "try-me" examples in documentation or tutorials  
+- Spin up throwaway environments for CI/CD smoke tests  
+
+…without polluting your global environment or managing virtualenvs by hand, **pysand** has you covered.
+
+---
+
+## Features
+
+- **Dual backends**:  
+  - `virtualenv` — uses the standard library `venv` + `pip`.  
+  - `docker` — builds and runs ephemeral Docker images.  
+- **One-line CLI**: install, run code or file, tear down.  
+- **Python API**: full control in your scripts or tools.  
+- **Automatic teardown**: sandbox directories and images are cleaned up by default.  
+- **Flexible installs**: pre-install on creation _and_ add packages later.  
+- **Timeouts**: guard runaway code with execution time limits.  
+- **Cross-platform**: macOS, Linux, Windows (Docker backend requires Docker).  
+
+---
+
+## Installation
+
+```bash
+pip install pysand
+```
+
+Note: For editable installs (development), run:
+
+```bash
+pip install -e .
+```
+
+## Quickstart
+
+### CLI Usage
+
+```bash
+# Run a one-off script in a virtualenv sandbox:
+pysand \
+  --backend virtualenv \
+  --packages pandas,numpy \
+  --file demo_script.py
+
+# Run inline code and keep the sandbox after execution:
+pysand \
+  --backend docker \
+  --packages pytest \
+  --code "import pytest; print(pytest.__version__)" \
+  --keep
+```
+
+Options:
+
+| Flag | Description |
+|------|-------------|
+| --backend | virtualenv or docker (required) |
+| --packages | Comma-separated list of packages to pip-install before execution |
+| --code | Inline Python code string (mutually exclusive with --file) |
+| --file | Path to a .py file (mutually exclusive with --code) |
+| --keep | Don't auto-teardown sandbox after execution (for debugging) |
+
+### Programmatic Usage
+
+```python
+from pysand import SandboxManager
+
+# 1) Create a sandbox with numpy + requests
+mgr = SandboxManager(backend="virtualenv", packages=["numpy>=1.24", "requests"])
+sandbox = mgr.create()
+
+# 2) Run some code
+stdout, stderr, exit_code = sandbox.exec("""
+import numpy as np
+print(np.array([1,2,3]) * 2)
+""")
+print("OUT:", stdout)
+print("ERR:", stderr)
+print("CODE:", exit_code)
+
+# 3) Install more packages on the fly
+sandbox.install(["pandas"])
+out2, err2, code2 = sandbox.exec("import pandas as pd; print(pd.__version__)")
+
+# 4) Tear down when done
+sandbox.teardown()
+```
+
+## Backend Details
+
+### VirtualenvSandbox
+
+Creation: uses venv.create() to build an isolated env
+
+- install(packages: List[str]): pip-install inside the sandbox
+- exec(code: str, timeout: int = 30): run code string, capture stdout/stderr
+- exec_file(path: str, timeout: int = 30): execute a script file
+- teardown(): delete the sandbox directory
+
+```python
+from pysand.backends.virtualenv import VirtualenvSandbox
+```
+
+### DockerSandbox
+
+Creation: writes a simple Dockerfile + docker build
+
+- install(packages: List[str]): append RUN pip install layer, rebuild image
+- exec(code: str, timeout: int = 30): docker run + capture output
+- exec_file(path: str, timeout: int = 30): mount script into container, run
+- teardown(): remove image + build context
+
+```python
+from pysand.backends.docker import DockerSandbox
+```
+
+## Advanced Examples
+
+Test multiple dependency versions
+
+```python
+versions = ["1.5.0", "2.0.1"]
+for ver in versions:
+    sb = SandboxManager("virtualenv", [f"pandas=={ver}"]).create()
+    out, _, _ = sb.exec("import pandas as pd; print(pd.__version__)")
+    print("Pandas", ver, "→", out.strip())
+    sb.teardown()
+```
+
+Smoke-test a GitHub project
+
+```bash
+git clone https://github.com/psf/requests.git /tmp/requests-demo
+pysand --backend virtualenv --packages pytest --code "import pytest; pytest.main(['/tmp/requests-demo'])"
+```
+
+## Testing
+
+We use pytest for our own test suite:
+
+```bash
+# ensure Docker is running if you want to test the docker backend
+PYTHONPATH=$(pwd) pytest -q
+```
+
+## CI Integration
+
+Here's a minimal GitHub Actions snippet to run tests on push:
+
+```yaml
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: pip install -e . pytest
+      - name: Run tests
+        run: PYTHONPATH=$(pwd) pytest -q
+```
+
+## Contributing
+
+1. Fork the repo
+2. Create a feature branch (git checkout -b feature/foo)
+3. Commit your changes (git commit -am 'Add foo')
+4. Push to the branch (git push origin feature/foo)
+5. Open a Pull Request
+
+Please follow our Code of Conduct and Contributing Guidelines.
+
+## License
+
+This project is licensed under the MIT License. See the LICENSE file for details.

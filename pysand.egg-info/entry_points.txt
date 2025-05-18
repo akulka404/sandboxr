@@ -1,0 +1,3 @@
+[console_scripts]
+pysand = pysand.cli:main
+
