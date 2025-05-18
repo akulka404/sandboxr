@@ -1,0 +1,2 @@
+[console_scripts]
+sandboxr = sandboxr.cli:main

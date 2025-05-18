@@ -1,3 +1,18 @@
+Metadata-Version: 2.1
+Name: sandboxr
+Version: 0.1.2
+Summary: Quickly spin up isolated Python sandboxes (virtualenv or Docker), install dependencies, execute code, and tear down.
+Home-page: https://github.com/akulka404/sandboxr
+Author: Ani Kulkarni
+Author-email: aniruddha.k1911@gmail.com
+Keywords: sandbox,virtualenv,docker,automation,cli
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Developers
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+
 # sandboxr
 
 [![PyPI Version](https://img.shields.io/pypi/v/sandboxr.svg)](https://pypi.org/project/sandboxr) [![Python Versions](https://img.shields.io/pypi/pyversions/sandboxr.svg)](https://pypi.org/project/sandboxr) [![License](https://img.shields.io/pypi/l/sandboxr.svg)](LICENSE)
