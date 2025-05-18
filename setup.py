@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="sandboxr",
-    version="0.1.2",
+    version="0.1.3",
     author="Ani Kulkarni",
     author_email="aniruddha.k1911@gmail.com",
     description="Quickly spin up isolated Python sandboxes (virtualenv or Docker), install dependencies, execute code, and tear down.",

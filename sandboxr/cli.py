@@ -8,6 +8,7 @@ def main():
     p = argparse.ArgumentParser(prog="sandboxr")
     p.add_argument("--backend", choices=["virtualenv","docker"], required=True)
     p.add_argument("--packages", default="", help="comma-separated list")
+    p.add_argument("--timeout", "-t", type=int, default=30, help="Max seconds to allow code to run (default: 30)")
     grp = p.add_mutually_exclusive_group(required=True)
     grp.add_argument("--code", help="Python code string")
     grp.add_argument("--file", help="Path to .py file")
@@ -19,9 +20,9 @@ def main():
     sandbox = mgr.create()
 
     if args.code:
-        out, err, code = sandbox.exec(args.code)
+        out, err, code = sandbox.exec(args.code, timeout=args.timeout)
     else:
-        out, err, code = sandbox.exec_file(args.file)
+        out, err, code = sandbox.exec_file(args.file, timeout=args.timeout)
 
     if out:
         # Print to stdout

@@ -14,6 +14,9 @@ class DockerSandbox:
         self.image_tag = f"sandboxr_{self.id}"
         self.build_dir = base_dir or tempfile.mkdtemp(prefix="sandboxr_docker_")
         self.dockerfile = os.path.join(self.build_dir, "Dockerfile")
+        # Create output directory
+        self.output_dir = os.path.join(self.build_dir, "output")
+        os.makedirs(self.output_dir, exist_ok=True)
 
     def create(self):
         df = ["FROM python:3.9-slim", "WORKDIR /sandbox"]
@@ -47,6 +50,7 @@ class DockerSandbox:
         cmd = [
             "docker", "run", "--rm",
             "-v", f"{abs_path}:/sandbox/script.py",
+            "-v", f"{self.output_dir}:/sandbox/output",
             self.image_tag, "python", "/sandbox/script.py"
         ]
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
